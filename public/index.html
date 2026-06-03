@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Photo to CSV Uploader</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      margin: 0;
+      padding: 40px;
+    }
+
+    .card {
+      max-width: 1400px;
+      margin: auto;
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      overflow-x: auto;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 12px;
+      font-size: 16px;
+    }
+
+    button {
+      background: #111;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    #preview {
+      margin-top: 20px;
+      max-width: 300px;
+      border-radius: 12px;
+      display: none;
+    }
+
+    #status {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 25px;
+      font-size: 13px;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      vertical-align: top;
+      min-width: 120px;
+    }
+
+    th {
+      background: #111;
+      color: white;
+      position: sticky;
+      top: 0;
+    }
+
+    th small {
+      display: block;
+      color: #ccc;
+      font-size: 10px;
+      margin-top: 4px;
+    }
+
+    td {
+      background: white;
+    }
+
+    td:empty {
+      background: #fff7d6;
+    }
+
+.hidden-export {
+  width: 0;
+  min-width: 0;
+  max-width: 0;
+  padding: 0;
+  border: none;
+  overflow: hidden;
+  font-size: 0;
+  color: transparent;
+}
+  display: none;
+}
+  </style>
+</head>
+
+<body>
+
+<div class="card">
+  <h1>Photo to CSV Uploader</h1>
+  <p>Upload an item photo and generate a copy/paste Trade Me CSV row.</p>
+
+  <form id="uploadForm">
+    <input id="photoInput" type="file" name="photos" accept="image/*" multiple required />	
+    <img id="preview" />
+    <button type="submit">Generate Listing</button>
+  </form>
+
+  <p id="status"></p>
+<button id="exportBtn" type="button" style="display:none;">
+  Export to Excel
+</button>
+
+  <table id="resultTable" style="display:none;">
+    <thead>
+      <tr>
+        <th>product_id_for_member<small>Photo filename</small></th>
+        <th class="hidden-export">sku<small>Internal SKU</small></th>
+        <th class="hidden-export">stock_amount<small>Usually 1</small></th>
+        <th class="hidden-export">unlimited_stock<small>TRUE/FALSE</small></th>
+        <th>category_id<small>Trade Me category</small></th>
+        <th class="hidden-export">second_category_id<small>Optional</small></th>
+        <th>title<small>Main listing title</small></th>
+        <th class="hidden-export">subtitle<small>Short selling line</small></th>
+        <th>body<small>Description</small></th>
+        <th>is_new<small>TRUE/FALSE</small></th>
+        <th class="hidden-export">attributes<small>Category attributes</small></th>
+        <th class="hidden-export">is_legal_notice_read<small>TRUE/FALSE</small></th>
+        <th>start_price<small>Auction start</small></th>
+        <th>reserve_price<small>Reserve price</small></th>
+        <th>buy_now_price<small>Buy Now price</small></th>
+        <th class="hidden-export">is_clearance<small>TRUE/FALSE</small></th>
+        <th class="hidden-export">was_price<small>Previous price</small></th>
+        <th class="hidden-export">has_promo<small>TRUE/FALSE</small></th>
+        <th class="hidden-export">is_sold_in_multiple_quantities<small>TRUE/FALSE</small></th>
+        <th class="hidden-export">is_shipping_price_per_quantity_sold<small>TRUE/FALSE</small></th>
+        <th class="hidden-export">fpo_amount<small>Fixed price offer</small></th>
+        <th class="hidden-export">fpo_duration<small>Offer duration</small></th>
+        <th class="hidden-export">fpo_to<small>Offer to</small></th>
+        <th class="hidden-export">av_bidders_only<small>TRUE/FALSE</small></th>
+        <th class="hidden-export">auction_length<small>Days listed</small></th>
+        <th class="hidden-export">auction_end_time<small>Optional</small></th>
+        <th class="hidden-export">delivery_pickup_allowed<small>TRUE/FALSE</small></th>
+        <th class="hidden-export">delivery_must_pickup<small>TRUE/FALSE</small></th>
+        <th class="hidden-export">delivery_use_bookcourier_rates<small>TRUE/FALSE</small></th>
+        <th class="hidden-export">delivery_bookcourier_is_box<small>TRUE/FALSE</small></th>
+        <th class="hidden-export">delivery_bookcourier_bag_size<small>Optional</small></th>
+        <th class="hidden-export">delivery_bookcourier_selected_courier<small>Courier</small></th>
+        <th class="hidden-export">delivery_bookcourier_service_level<small>Service</small></th>
+        <th class="hidden-export">delivery_bookcourier_no_restricted_items<small>TRUE/FALSE</small></th>
+        <th>delivery_price<small>Shipping price</small></th>
+        <th class="hidden-export">payment_bank_deposit<small>TRUE/FALSE</small></th>
+        <th class="hidden-export">payment_credit_card<small>TRUE/FALSE</small></th>
+        <th class="hidden-export">payment_cash<small>TRUE/FALSE</small></th>
+        <th class="hidden-export">payment_afterpay<small>TRUE/FALSE</small></th>
+        <th class="hidden-export">payment_other<small>Other payment</small></th>
+        <th class="hidden-export">send_payment_instructions<small>TRUE/FALSE</small></th>
+        <th>photo_id_list<small>Trade Me photo IDs</small></th>
+        <th class="hidden-export">youtube_video_key<small>Optional</small></th>
+        <th class="hidden-export">display_bold<small>TRUE/FALSE</small></th>
+        <th class="hidden-export">gallery<small>TRUE/FALSE</small></th>
+        <th class="hidden-export">gallery_plus<small>TRUE/FALSE</small></th>
+        <th class="hidden-export">feature<small>TRUE/FALSE</small></th>
+        <th class="hidden-export">super_feature<small>TRUE/FALSE</small></th>
+        <th class="hidden-export">donation_recipient<small>Optional</small></th>
+        <th class="hidden-export">folder<small>Folder name</small></th>
+        <th class="hidden-export">exclude_shipping_promotion<small>TRUE/FALSE</small></th>
+        <th class="hidden-export">listing_footer_enabled<small>TRUE/FALSE</small></th>
+        <th class="hidden-export">height_cm<small>Package height</small></th>
+        <th class="hidden-export">width_cm<small>Package width</small></th>
+        <th class="hidden-export">length_cm<small>Package length</small></th>
+        <th class="hidden-export">weight_kg<small>Package weight</small></th>
+        <th class="hidden-export">brand<small>Brand name</small></th>
+        <th class="hidden-export">manufacturer_code<small>Model/code</small></th>
+        <th class="hidden-export">barcode_gtin<small>Barcode</small></th>
+        <th class="hidden-export">update_active_listings<small>TRUE/FALSE</small></th>
+      </tr>
+    </thead>
+
+    <tbody id="tableBody"></tbody>
+  </table>
+</div>
+
+<script>
+  const form = document.getElementById("uploadForm");
+  const photoInput = document.getElementById("photoInput");
+  const preview = document.getElementById("preview");
+  const statusText = document.getElementById("status");
+
+  photoInput.addEventListener("change", () => {
+    const file = photoInput.files[0];
+
+    if (!file) return;
+
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = "block";
+  });
+
+  function boolText(value, defaultValue = "FALSE") {
+    if (
+      value === "1" ||
+      value === 1 ||
+      value === true ||
+      value === "TRUE" ||
+      value === "true"
+    ) {
+      return "TRUE";
+    }
+
+    if (
+      value === "0" ||
+      value === 0 ||
+      value === false ||
+      value === "FALSE" ||
+      value === "false"
+    ) {
+      return "FALSE";
+    }
+
+    return value || defaultValue;
+  }
+
+function saveCurrentInputs() {
+  const values = [];
+
+  document.querySelectorAll("#tableBody tr").forEach(row => {
+    const rowValues = [];
+
+    row.querySelectorAll("input, select").forEach(input => {
+      rowValues.push(input.value);
+    });
+
+    values.push(rowValues);
+  });
+
+  return values;
+}
+
+function restoreCurrentInputs(savedValues) {
+  document.querySelectorAll("#tableBody tr").forEach((row, rowIndex) => {
+    const inputs = row.querySelectorAll("input, select");
+
+    inputs.forEach((input, inputIndex) => {
+      if (
+        savedValues[rowIndex] &&
+        savedValues[rowIndex][inputIndex] !== undefined
+      ) {
+        input.value = savedValues[rowIndex][inputIndex];
+      }
+    });
+  });
+}
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+const savedValues = saveCurrentInputs();
+
+    statusText.textContent = "Generating listing... please wait.";
+
+    const formData = new FormData(form);
+
+    try {
+      const response = await fetch("/upload", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (!data.listing) {
+        throw new Error("No listing returned from server");
+      }
+
+      const cleanListing = data.listing
+        .replace(/```json/g, "")
+        .replace(/```/g, "")
+        .trim();
+
+      const listing = JSON.parse(cleanListing);
+
+      document.getElementById("resultTable").style.display = "table";
+
+      document.getElementById("tableBody").innerHTML += `
+        <tr>
+          <td contenteditable="true">${listing.product_id_for_member || ""}</td>
+          <td class="hidden-export" contenteditable="true"></td>
+          <td class="hidden-export" contenteditable="true">1</td>
+          <td class="hidden-export" contenteditable="true">FALSE</td>
+          <td contenteditable="true">${listing.category_id || ""}</td>
+          <td class="hidden-export" contenteditable="true"></td>
+          <td contenteditable="true">${listing.title ? `${listing.title} #${listing.product_id_for_member || ""}` : ""}</td>
+          <td class="hidden-export" contenteditable="true"></td>
+          <td contenteditable="true">${listing.body || ""}</td>
+          <td>
+  <select style="padding:6px; width:100px;">
+    <option value="TRUE">TRUE</option>
+    <option value="FALSE" selected>FALSE</option>
+  </select>
+</td>
+          <td class="hidden-export" contenteditable="true"></td>
+          <td class="hidden-export" contenteditable="true">TRUE</td>
+          <td contenteditable="true"></td>
+          <td contenteditable="true"></td>
+          <td contenteditable="true"></td>
+          <td class="hidden-export" contenteditable="true">FALSE</td>
+          <td class="hidden-export" contenteditable="true"></td>
+          <td class="hidden-export" contenteditable="true">N</td>
+          <td class="hidden-export" contenteditable="true">FALSE</td>
+          <td class="hidden-export" contenteditable="true">FALSE</td>
+          <td class="hidden-export" contenteditable="true"></td>
+          <td class="hidden-export" contenteditable="true">3 days</td>
+          <td class="hidden-export" contenteditable="true">A</td>
+          <td class="hidden-export" contenteditable="true">TRUE</td>
+          <td class="hidden-export" contenteditable="true">7 day</td>
+          <td class="hidden-export" contenteditable="true"></td>
+          <td class="hidden-export" contenteditable="true">TRUE</td>
+          <td class="hidden-export" contenteditable="true">FALSE</td>
+          <td class="hidden-export" contenteditable="true">FALSE</td>
+          <td class="hidden-export" contenteditable="true"></td>
+          <td class="hidden-export" contenteditable="true"></td>
+          <td class="hidden-export" contenteditable="true"></td>
+          <td class="hidden-export" contenteditable="true"></td>
+          <td class="hidden-export" contenteditable="true"></td>
+          <td>
+  <select style="padding:6px; width:140px;">
+    <option value="">Select Shipping</option>
+    <option value="A4 Bag">A4 Bag</option>
+    <option value="Small bag">Small bag</option>
+    <option value="Shipping box">Shipping box</option>
+    <option value="Free shipping">Free shipping</option>
+  </select>
+</td>
+          <td class="hidden-export" contenteditable="true">TRUE</td>
+          <td class="hidden-export" contenteditable="true">TRUE</td>
+          <td class="hidden-export" contenteditable="true">TRUE</td>
+          <td class="hidden-export" contenteditable="true">TRUE</td>
+          <td class="hidden-export" contenteditable="true"></td>
+          <td class="hidden-export" contenteditable="true">TRUE</td>
+          <td contenteditable="true">${listing.photo_id_list || listing.full_file_name || ""}</td>
+          <td class="hidden-export" contenteditable="true">${listing.youtube_video_key || ""}</td>
+          <td class="hidden-export" contenteditable="true">FALSE</td>
+          <td class="hidden-export" contenteditable="true">FALSE</td>
+          <td class="hidden-export" contenteditable="true">FALSE</td>
+          <td class="hidden-export" contenteditable="true">FALSE</td>
+          <td class="hidden-export" contenteditable="true">FALSE</td>
+          <td class="hidden-export" contenteditable="true"></td>
+          <td class="hidden-export" contenteditable="true"></td>
+          <td class="hidden-export" contenteditable="true">FALSE</td>
+          <td class="hidden-export" contenteditable="true">TRUE</td>
+          <td class="hidden-export" contenteditable="true">0</td>
+          <td class="hidden-export" contenteditable="true">0</td>
+          <td class="hidden-export" contenteditable="true">0</td>
+          <td class="hidden-export" contenteditable="true">0</td>
+          <td class="hidden-export" contenteditable="true"></td>
+          <td class="hidden-export" contenteditable="true"></td>
+          <td class="hidden-export" contenteditable="true"></td>
+          <td class="hidden-export" contenteditable="true">FALSE</td>
+        </tr>
+      `;
+
+restoreCurrentInputs(savedValues);
+
+            statusText.textContent = "Listing generated. You can now export the CSV.";
+
+      document.getElementById("exportBtn").style.display = "block";
+
+    } catch (error) {
+      console.error(error);
+      statusText.textContent = "Something went wrong. Check PowerShell for the error.";
+    }
+  });
+
+  document.getElementById("exportBtn").addEventListener("click", () => {
+    const table = document.getElementById("resultTable");
+    const csv = [];
+
+    const headers = table.querySelectorAll("thead th");
+    const headerRow = [];
+
+    headers.forEach(header => {
+      const heading = header.childNodes[0].textContent.trim();
+      headerRow.push('"' + heading.replace(/"/g, '""') + '"');
+    });
+
+    csv.push(headerRow.join(","));
+
+    const rows = table.querySelectorAll("tbody tr");
+
+    rows.forEach(row => {
+      const rowData = [];
+
+      row.querySelectorAll("td").forEach(cell => {
+        const input = cell.querySelector("input, select");
+
+        const text = input
+          ? input.value
+          : cell.innerText;
+
+        rowData.push('"' + text.replace(/"/g, '""') + '"');
+      });
+
+      csv.push(rowData.join(","));
+    });
+
+    const csvFile = new Blob([csv.join("\n")], {
+      type: "text/csv"
+    });
+
+    const downloadLink = document.createElement("a");
+    downloadLink.download = "trade-me-listing.csv";
+    downloadLink.href = window.URL.createObjectURL(csvFile);
+    downloadLink.click();
+  });
+</script>
+
+</script>
+
+</body>
+</html>

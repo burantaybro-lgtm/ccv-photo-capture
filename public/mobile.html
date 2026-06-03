@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>CCV Mobile Stock Photos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
+  <style>
+    :root {
+      --ccv-yellow: #EEB111;
+      --ccv-burgundy: #98132F;
+      --text: #222;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: linear-gradient(135deg, var(--ccv-burgundy), #5f0c1d);
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    .card {
+      background: white;
+      padding: 22px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+      border-top: 8px solid var(--ccv-yellow);
+    }
+
+    h2 {
+      margin-top: 0;
+      color: var(--ccv-burgundy);
+      font-size: 28px;
+      text-align: center;
+    }
+
+    label {
+      font-weight: bold;
+      color: var(--text);
+      margin-top: 16px;
+      display: block;
+    }
+
+    input,
+    button {
+      width: 100%;
+      padding: 15px;
+      margin-top: 10px;
+      font-size: 18px;
+      box-sizing: border-box;
+      border-radius: 12px;
+    }
+
+    input {
+      border: 2px solid #ddd;
+    }
+
+    button {
+      background: var(--ccv-burgundy);
+      color: white;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #scanBtn {
+      background: #222;
+    }
+
+    #takePhotoBtn {
+      background: var(--ccv-yellow);
+      color: #222;
+    }
+
+    #uploadBtn {
+      background: var(--ccv-burgundy);
+    }
+
+    #status {
+      font-weight: bold;
+      color: var(--ccv-burgundy);
+      margin-top: 18px;
+      text-align: center;
+    }
+
+    img {
+      width: 100%;
+      margin-top: 15px;
+      border-radius: 14px;
+      border: 3px solid var(--ccv-yellow);
+    }
+
+    #reader {
+      position: relative;
+      width: 100%;
+      margin-top: 15px;
+      display: none;
+      overflow: hidden;
+      border-radius: 14px;
+      border: 3px solid var(--ccv-yellow);
+      background: black;
+    }
+
+    .scan-line {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: red;
+      animation: scan 2s linear infinite;
+      z-index: 999;
+      box-shadow: 0 0 10px red;
+    }
+
+    @keyframes scan {
+      0% { top: 0; }
+      50% { top: calc(100% - 3px); }
+      100% { top: 0; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <h2>CCV Stock Capture</h2>
+
+    <label>Stock Code</label>
+    <input id="stockCode" placeholder="Example: A18108199-1">
+
+    <button id="scanBtn" type="button">Scan Stock Code</button>
+
+    <div id="reader">
+      <div class="scan-line"></div>
+    </div>
+
+    <input
+      id="photoInput"
+      type="file"
+      accept="image/*"
+      capture="environment"
+      multiple
+      style="display:none;"
+    >
+
+    <button id="takePhotoBtn" type="button">Take Photos</button>
+    <button id="uploadBtn" type="button">Upload Photos</button>
+
+    <p id="status"></p>
+    <img id="preview" style="display:none;">
+  </div>
+
+<script>
+let photoCount = 0;
+let scanner = null;
+
+const stockCode = document.getElementById("stockCode");
+const photoInput = document.getElementById("photoInput");
+const preview = document.getElementById("preview");
+const statusText = document.getElementById("status");
+const reader = document.getElementById("reader");
+const takePhotoBtn = document.getElementById("takePhotoBtn");
+
+async function stopScanner() {
+  if (scanner) {
+    try {
+      await scanner.stop();
+      await scanner.clear();
+    } catch (error) {
+      console.log("Scanner already stopped");
+    }
+
+    scanner = null;
+  }
+
+  reader.style.display = "none";
+}
+
+takePhotoBtn.addEventListener("click", async () => {
+  await stopScanner();
+  photoInput.click();
+});
+
+photoInput.addEventListener("change", () => {
+  const file = photoInput.files[0];
+  if (!file) return;
+
+  preview.src = URL.createObjectURL(file);
+  preview.style.display = "block";
+
+  statusText.textContent = `${photoInput.files.length} photo(s) selected`;
+});
+
+document.getElementById("scanBtn").addEventListener("click", async () => {
+  try {
+    reader.style.display = "block";
+    reader.innerHTML = "";
+
+    statusText.textContent = "Starting scanner...";
+
+    const html5QrCode = new Html5Qrcode("reader");
+
+    await html5QrCode.start(
+      { facingMode: "environment" },
+      {
+        fps: 10,
+        qrbox: { width: 250, height: 250 }
+      },
+      async (decodedText) => {
+        stockCode.value = decodedText;
+        statusText.textContent = "Scanned: " + decodedText;
+
+        await html5QrCode.stop();
+        reader.style.display = "none";
+      }
+    );
+
+  } catch (error) {
+    console.error(error);
+    statusText.textContent = "Scanner failed: " + error;
+  }
+});
+
+document.getElementById("uploadBtn").addEventListener("click", async () => {
+  const code = stockCode.value.trim();
+
+  if (!code) {
+    alert("Enter or scan stock code first");
+    return;
+  }
+
+  if (photoInput.files.length === 0) {
+    alert("Take photo(s) first");
+    return;
+  }
+
+  const formData = new FormData();
+
+  Array.from(photoInput.files).forEach(file => {
+    formData.append("photos", file);
+  });
+
+  formData.append("stockCode", code);
+
+  statusText.textContent = "Uploading photos...";
+
+  try {
+    const response = await fetch("/mobile-upload", {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      statusText.textContent = "Saved: " + data.filename;
+
+      photoCount++;
+      photoInput.value = "";
+      preview.style.display = "none";
+
+      await stopScanner();
+    } else {
+      statusText.textContent = "Upload failed";
+    }
+
+  } catch (error) {
+    console.error(error);
+    statusText.textContent = "Upload failed";
+  }
+});
+</script>
+
+</body>
+</html>
