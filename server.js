@@ -621,8 +621,6 @@ const storeUploadFolder = path.join(
         day: "2-digit"
       }).split("/").reverse().join("-");
 
-try {
-
   if (process.env.DROPBOX_REFRESH_TOKEN) {
 
     const accessToken = await getDropboxAccessToken();
@@ -652,20 +650,29 @@ try {
     );
   }
 
-  res.json({
-    success: true,
-    filename: savedFiles.join(";")
-  });
+      savedFiles.push(newFileName);
+    }
 
-} catch (error) {
+    res.json({
+      success: true,
+      store: store.name,
+      localFolder: storeUploadFolder,
+      dropboxFolder: `Trademe Uploads/${store.name}/${dateFolder}/${safePhotoType}`,
+      filename: savedFiles.join(";"),
+      files: savedFiles
+    });
 
-  console.error(error);
+  } catch (error) {
 
-  res.status(500).json({
-    error: "Upload failed"
-  });
+    console.error(error);
 
-}
+    res.status(500).json({
+      success: false,
+      error: "Upload failed"
+    });
+
+  }
+});
 
 app.get("/generate-from-uploads", async (req, res) => {
   try {
