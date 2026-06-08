@@ -632,7 +632,7 @@ const storeUploadFolder = path.join(
     });
 
     const dropboxResult = await dbxUpload.filesUpload({
-      path: `Trademe Uploads/${store.name}/${dateFolder}/${safePhotoType}/${newFileName}`,
+      path: `/Trademe Uploads/${store.name}/${dateFolder}/${safePhotoType}/${newFileName}`,
       contents: fileContent,
       mode: "add"
     });
@@ -646,7 +646,7 @@ const storeUploadFolder = path.join(
 
     console.log(
       "Uploaded to Dropbox:",
-      `Trademe Uploads/${store.name}/${dateFolder}/${safePhotoType}/${newFileName}`
+      `/Trademe Uploads/${store.name}/${dateFolder}/${safePhotoType}/${newFileName}`
     );
   }
 
