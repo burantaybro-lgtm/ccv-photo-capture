@@ -641,9 +641,12 @@ console.log(
   dropboxResult.result.path_display
 );
 
-console.log("Uploaded to Dropbox:", `/Trademe Uploads/${store.name}/${dateFolder}/${safePhotoType}/${newFileName}`);
+console.log(JSON.stringify(dropboxResult, null, 2));
 
-}
+console.log(
+  "Uploaded to Dropbox:",
+  `Trademe Uploads/${store.name}/${dateFolder}/${safePhotoType}/${newFileName}`
+);
 
       savedFiles.push(newFileName);
     }
