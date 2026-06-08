@@ -631,7 +631,7 @@ if (process.env.DROPBOX_REFRESH_TOKEN) {
   });
 
 const dropboxResult = await dbxUpload.filesUpload({
-  path: `/Trademe Uploads/${store.name}/${dateFolder}/${safePhotoType}/${newFileName}`,
+  path: `Trademe Uploads/${store.name}/${dateFolder}/${safePhotoType}/${newFileName}`,
   contents: fileContent,
   mode: "add"
 });
