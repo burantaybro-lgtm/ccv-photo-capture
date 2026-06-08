@@ -739,6 +739,111 @@ createdListings.push(listing);
   }
 });
 
+app.get("/generate-from-dropbox-ready", async (req, res) => {
+  try {
+    const accessToken = await getDropboxAccessToken();
+
+    const dbxReady = new Dropbox({
+      accessToken
+    });
+
+    const readyFolder = "/Trademe CSV Queue/Ready";
+    const processedFolder = "/Trademe CSV Queue/Processed";
+
+    const listResult = await dbxReady.filesListFolder({
+      path: readyFolder,
+      recursive: true
+    });
+
+    const imageFiles = listResult.result.entries.filter(entry =>
+      entry[".tag"] === "file" &&
+      /\.(jpg|jpeg|png)$/i.test(entry.name)
+    );
+
+    if (imageFiles.length === 0) {
+      return res.json({
+        success: false,
+        message: "No photos found in Dropbox Ready folder"
+      });
+    }
+
+    const groups = {};
+
+    for (const file of imageFiles) {
+      const parts = file.path_display.split("/");
+      const stockCode = parts[parts.length - 2];
+
+      if (!groups[stockCode]) {
+        groups[stockCode] = [];
+      }
+
+      groups[stockCode].push(file);
+    }
+
+    const createdListings = [];
+
+    for (const stockCode of Object.keys(groups)) {
+      const files = groups[stockCode];
+      const localFiles = [];
+
+      for (const file of files) {
+        const download = await dbxReady.filesDownload({
+          path: file.path_lower
+        });
+
+        const localFileName = file.name;
+        const localPath = path.join("uploads", localFileName);
+
+        fs.writeFileSync(localPath, download.result.fileBinary);
+
+        localFiles.push(localFileName);
+      }
+
+      const listing = await createListingFromPhotos(stockCode, localFiles);
+
+      await csvWriter.writeRecords([listing]);
+
+      createdListings.push(listing);
+
+      for (const file of files) {
+        const processedPath = file.path_display.replace(
+          readyFolder,
+          processedFolder
+        );
+
+        await dbxReady.filesMoveV2({
+          from_path: file.path_display,
+          to_path: processedPath,
+          autorename: true
+        });
+      }
+
+      for (const localFile of localFiles) {
+        const localPath = path.join("uploads", localFile);
+
+        if (fs.existsSync(localPath)) {
+          fs.unlinkSync(localPath);
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      message: "CSV rows created from Dropbox Ready folder",
+      count: createdListings.length,
+      listings: createdListings
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      error: "Failed to generate CSV from Dropbox Ready folder"
+    });
+  }
+});
+
 app.post("/store-login", (req, res) => {
   console.log("LOGIN BODY:", req.body);
 
