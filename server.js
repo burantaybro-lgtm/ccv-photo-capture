@@ -770,8 +770,10 @@ app.get("/generate-from-dropbox-ready", async (req, res) => {
     const groups = {};
 
     for (const file of imageFiles) {
-      const parts = file.path_display.split("/");
-      const stockCode = parts[parts.length - 2];
+const stockCode = path
+  .parse(file.name)
+  .name
+  .replace(/\s*\(\d+\)$/g, "");
 
       if (!groups[stockCode]) {
         groups[stockCode] = [];
