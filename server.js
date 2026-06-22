@@ -85,6 +85,18 @@ const stores = {
     name: "Wanganui",
     password: "9999",
     dropboxFolder: "Wanganui"
+  },
+
+  "hamilton-central": {
+    name: "Hamilton Central",
+    password: "6767",
+    dropboxFolder: "Hamilton Central"
+  },
+
+  "hamilton-east": {
+    name: "Hamilton East",
+    password: "2323",
+    dropboxFolder: "Hamilton East"
   }
 };
 
