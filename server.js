@@ -652,7 +652,7 @@ app.post("/upload", upload.array("photos", 10), async (req, res) => {
       .name
       .replace(/\s*\(\d+\)$/g, "");
 
-    const photoFiles = uploadedFiles.map(file => file.originalname);
+    const photoFiles = uploadedFiles.map(file => file.filename);
 
     const photoType = req.body.photoType || "Floorstock";
 
@@ -833,9 +833,13 @@ app.get("/generate-from-uploads", async (req, res) => {
     for (const stockCode of Object.keys(groups)) {
       const photoFiles = groups[stockCode];
 
-      const photoType = req.body.photoType || "Floorstock";
+      const photoType = "Floorstock";
 
-const listing = await createListingFromPhotos(stockCode, photoFiles, photoType);
+const listing = await createListingFromPhotos(
+    stockCode,
+    photoFiles,
+    photoType
+);
 
 await csvWriter.writeRecords([listing]);
 
@@ -896,6 +900,15 @@ if (fs.existsSync(csvPath)) {
       recursive: true
     });
 
+console.log(
+  "Dropbox entries:",
+  listResult.result.entries.map(e => ({
+    name: e.name,
+    tag: e[".tag"],
+    path: e.path_display
+  }))
+);
+
     const imageFiles = listResult.result.entries.filter(entry =>
       entry[".tag"] === "file" &&
       /\.(jpg|jpeg|png)$/i.test(entry.name)
@@ -942,9 +955,13 @@ const stockCode = path
         localFiles.push(localFileName);
       }
 
-      const photoType = req.body.photoType || "Floorstock";
+      const photoType = "Floorstock";
 
-const listing = await createListingFromPhotos(stockCode, photoFiles, photoType);
+const listing = await createListingFromPhotos(
+    stockCode,
+    localFiles,
+    photoType
+);
 
       await csvWriter.writeRecords([listing]);
 
