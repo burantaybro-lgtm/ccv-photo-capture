@@ -341,7 +341,104 @@ function applyTradeMeDefaults(listing) {
   return listing;
 }
 
-async function createListingFromPhotos(stockCode, photoFiles) {
+function isJewelleryItem(listing, photoType = "") {
+  const text = `${photoType} ${listing.title} ${listing.body}`.toLowerCase();
+
+  return [
+    "jewellery",
+    "ring",
+    "necklace",
+    "pendant",
+    "earrings",
+    "bracelet",
+    "bangle",
+    "chain",
+    "gold",
+    "silver",
+    "diamond"
+  ].some(word => text.includes(word));
+}
+
+function isValuedJewellery(photoType = "") {
+  return photoType.toLowerCase().includes("valued");
+}
+
+function formatValuedJewelleryBody(listing) {
+  return `NEW RETAIL PRICE: ${listing.new_retail_price || ""}
+
+MARKET VALUE: ${listing.market_value || ""}
+
+HALLMARK/STAMPED: ${listing.hallmark || listing.metal || ""}
+
+SIZE: ${listing.size || ""}
+
+WEIGHT: ${listing.weight || ""}
+
+STONES/DIAMOND: ${listing.stones || "PLEASE SEE VALUATION FOR MORE INFO"}`;
+}
+
+function formatStandardJewelleryBody(listing) {
+  return `ITEM TYPE:
+${listing.item_type || ""}
+
+METAL:
+${listing.metal || ""}
+
+STONE:
+${listing.stone || ""}
+
+SIZE:
+${listing.size || ""}
+
+WEIGHT:
+${listing.weight || ""}
+
+COSMETIC CONDITION:
+(${listing.condition || "B"})
+
+(A) LIKE NEW
+(B) GOOD CONDITION
+(C) AVERAGE CONDITION
+(D) POOR CONDITION`;
+}
+
+function formatFloorstockBody(listing) {
+  return `MODEL:
+${listing.model || ""}
+
+ACCESSORIES:
+
+
+COSMETIC CONDITION:
+(${listing.condition || "B"})
+
+(A) LIKE NEW
+(B) GOOD CONDITION
+(C) AVERAGE CONDITION
+(D) POOR CONDITION`;
+}
+
+function applyListingTemplate(listing, photoType = "") {
+  if (isJewelleryItem(listing, photoType) && isValuedJewellery(photoType)) {
+    listing.folder = "Valued Jewellery";
+    listing.delivery_price = "Free shipping";
+    listing.body = formatValuedJewelleryBody(listing);
+    return listing;
+  }
+
+  if (isJewelleryItem(listing, photoType)) {
+    listing.folder = "Jewellery";
+    listing.delivery_price = "Small bag";
+    listing.body = formatStandardJewelleryBody(listing);
+    return listing;
+  }
+
+  listing.folder = "Floorstock";
+  listing.body = formatFloorstockBody(listing);
+  return listing;
+}
+
+async function createListingFromPhotos(stockCode, photoFiles, photoType = "") {
   const photoIdList = photoFiles.join(";");
   const firstPhotoPath = path.join("uploads", photoFiles[0]);
   const imageBase64 = fs.readFileSync(firstPhotoPath, "base64");
@@ -358,6 +455,8 @@ async function createListingFromPhotos(stockCode, photoFiles) {
             type: "input_text",
             text: `
 Look at this item photo and create Trade Me CSV listing data.
+
+Photo type: "${photoType}"
 
 IMPORTANT RULES:
 
@@ -427,6 +526,15 @@ Return ONLY valid JSON.
 Do NOT use markdown.
 Do NOT use backticks.
 
+For valued jewellery:
+- If photoType is "Valued Jewellery", extract the valuation details if visible.
+- new_retail_price should be the valuation retail price.
+- market_value should be the valuation/market value.
+- hallmark should be the stamped metal mark, for example 9CT, 14K, 18CT.
+- size should be ring size or chain length.
+- weight should be item weight.
+- stones should say "PLEASE SEE VALUATION FOR MORE INFO" unless stone details are clearly known.
+
 Use this exact JSON structure:
 
 {
@@ -489,6 +597,16 @@ Use this exact JSON structure:
   "brand": "",
   "manufacturer_code": "",
   "barcode_gtin": "",
+  "item_type": "",
+  "metal": "",
+  "stone": "",
+  "stones": "",
+  "size": "",
+  "weight": "",
+  "hallmark": "",
+  "new_retail_price": "",
+  "market_value": "",
+  "model": "",	
   "condition": "",
   "update_active_listings": "FALSE"
 }
@@ -513,7 +631,8 @@ Use this exact JSON structure:
   listing.product_id_for_member = stockCode;
   listing.photo_id_list = photoIdList;
 
-  return applyTradeMeDefaults(listing);
+  applyTradeMeDefaults(listing);
+return applyListingTemplate(listing, photoType);
 }
 
 app.post("/upload", upload.array("photos", 10), async (req, res) => {
@@ -535,7 +654,9 @@ app.post("/upload", upload.array("photos", 10), async (req, res) => {
 
     const photoFiles = uploadedFiles.map(file => file.originalname);
 
-    const listing = await createListingFromPhotos(stockCode, photoFiles);
+    const photoType = req.body.photoType || "Floorstock";
+
+const listing = await createListingFromPhotos(stockCode, photoFiles, photoType);
 
     await csvWriter.writeRecords([listing]);
 
@@ -712,7 +833,9 @@ app.get("/generate-from-uploads", async (req, res) => {
     for (const stockCode of Object.keys(groups)) {
       const photoFiles = groups[stockCode];
 
-      const listing = await createListingFromPhotos(stockCode, photoFiles);
+      const photoType = req.body.photoType || "Floorstock";
+
+const listing = await createListingFromPhotos(stockCode, photoFiles, photoType);
 
 await csvWriter.writeRecords([listing]);
 
@@ -819,7 +942,9 @@ const stockCode = path
         localFiles.push(localFileName);
       }
 
-      const listing = await createListingFromPhotos(stockCode, localFiles);
+      const photoType = req.body.photoType || "Floorstock";
+
+const listing = await createListingFromPhotos(stockCode, photoFiles, photoType);
 
       await csvWriter.writeRecords([listing]);
 
