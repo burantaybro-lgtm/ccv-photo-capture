@@ -37,9 +37,14 @@ if (!fs.existsSync("uploads")) {
 }
 
 app.use(cors());
-app.use(express.static("public"));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "mobile.html"));
+});
+
+app.use(express.static("public"));
 
 const storage = multer.diskStorage({
   destination: "uploads/",
